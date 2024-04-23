@@ -1,0 +1,19 @@
+{
+  "name": "socket-io-ec2-redis",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-sns": "^3.556.0",
+    "@aws-sdk/client-sqs": "^3.556.0",
+    "@socket.io/aws-sqs-adapter": "^0.1.0",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "redis": "^4.6.13",
+    "socket.io": "^4.7.5"
+  }
+}
