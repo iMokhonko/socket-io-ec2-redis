@@ -1,22 +1,22 @@
-const { createClient } = require('redis')
+// const { createClient } = require('redis')
 const { Server } = require('socket.io');
-const { createShardedAdapter } = require('@socket.io/redis-adapter');
+// const { createShardedAdapter } = require('@socket.io/redis-adapter');
 
-const pubClient = createClient({ 
-  url: 'rediss://sockets-adapter-rwzd07.serverless.euc1.cache.amazonaws.com:6379',
-  tls: true
-});
-const subClient = pubClient.duplicate();
+// const pubClient = createClient({ 
+//   url: 'rediss://sockets-adapter-rwzd07.serverless.euc1.cache.amazonaws.com:6379',
+//   tls: true
+// });
+// const subClient = pubClient.duplicate();
 
-pubClient.on('error', (err) => console.log('Redis Client Error', err));
+// pubClient.on('error', (err) => console.log('Redis Client Error', err));
 
   // const randomNumber = Math.floor(Math.random() * (3100 - 3000 + 1)) + 3000;
   // console.log(randomNumber);
 
 const io = new Server({
-  adapter: createShardedAdapter(pubClient, subClient, {
-    subscriptionMode: "dynamic"
-  }),
+  // adapter: createShardedAdapter(pubClient, subClient, {
+  //   subscriptionMode: "dynamic"
+  // }),
 
   cors: {
     origin: ['http://localhost:8080']
@@ -24,10 +24,10 @@ const io = new Server({
 });
 
 (async () => {
-  await Promise.all([
-    pubClient.connect(),
-    subClient.connect()
-  ]);
+  // await Promise.all([
+  //   pubClient.connect(),
+  //   subClient.connect()
+  // ]);
 
   const rooms = [];
 
