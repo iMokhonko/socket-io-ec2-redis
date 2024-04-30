@@ -16,7 +16,7 @@ RUN pnpm install
 COPY . .
 
 # Make port 8080 available to the world outside this container
-EXPOSE 3000
+EXPOSE 80 3000
 
 # Run the application when the container launches
 CMD ["node", "src/index.js"]

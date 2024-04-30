@@ -1,33 +1,33 @@
-// const { createClient } = require('redis')
+const express = require('express');
+const expressServer = express();
+
+const { createClient } = require('redis')
 const { Server } = require('socket.io');
-// const { createShardedAdapter } = require('@socket.io/redis-adapter');
+const { createShardedAdapter } = require('@socket.io/redis-adapter');
 
-// const pubClient = createClient({ 
-//   url: 'rediss://sockets-adapter-rwzd07.serverless.euc1.cache.amazonaws.com:6379',
-//   tls: true
-// });
-// const subClient = pubClient.duplicate();
+const pubClient = createClient({ 
+  url: 'rediss://chat-websocket-messages-redis-adapter-rwzd07.serverless.euc1.cache.amazonaws.com:6379',
+  tls: true
+});
+const subClient = pubClient.duplicate();
 
-// pubClient.on('error', (err) => console.log('Redis Client Error', err));
-
-  // const randomNumber = Math.floor(Math.random() * (3100 - 3000 + 1)) + 3000;
-  // console.log(randomNumber);
+pubClient.on('error', (err) => console.log('Redis Client Error', err));
 
 const io = new Server({
-  // adapter: createShardedAdapter(pubClient, subClient, {
-  //   subscriptionMode: "dynamic"
-  // }),
+  adapter: createShardedAdapter(pubClient, subClient, {
+    subscriptionMode: "dynamic"
+  }),
 
   cors: {
-    origin: ['http://localhost:8080']
+    origin: '*'
   }
 });
 
 (async () => {
-  // await Promise.all([
-  //   pubClient.connect(),
-  //   subClient.connect()
-  // ]);
+  await Promise.all([
+    pubClient.connect(),
+    subClient.connect()
+  ]);
 
   const rooms = [];
 
@@ -104,6 +104,13 @@ const io = new Server({
     });
   });
 
-  io.listen(3000);
+  io.listen(80);
 })();
+
+// for health checks
+expressServer.get('/health', (_, res) => res.status(200).send("OK"));
+
+expressServer.listen(3000, () => {
+  console.log(`Server is running and listening at http://localhost:3000`);
+});
 
