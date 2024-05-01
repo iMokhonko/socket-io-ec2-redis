@@ -84,6 +84,8 @@ resource "aws_launch_template" "chat_asg_launch_template" {
   // Primary instance type
   instance_type = "t4g.micro"
 
+  # key_name = "ec2_instance"
+
   image_id               = "ami-06ea60c08bdaa1f49"
   user_data              = filebase64("./user-data.sh")
   vpc_security_group_ids = [aws_security_group.chat_asg_sg.id]

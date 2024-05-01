@@ -6,6 +6,10 @@ resource "aws_lb_target_group" "chat_lb_target_group" {
   protocol             = "HTTP"
   vpc_id               = aws_vpc.chat_backend_vpc.id
 
+  stickiness {
+    type = "lb_cookie"
+  }
+
   health_check {
     port     = 3000
     path     = "/health"
