@@ -4,14 +4,22 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "NODE_ENV=development nodemon src/index.js",
+    "prod": "NODE_ENV=production node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.567.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "express": "^4.19.2",
+    "ksuid": "^3.0.0",
     "redis": "^4.6.13",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }

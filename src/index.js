@@ -5,6 +5,14 @@ const { createClient } = require('redis')
 const { Server } = require('socket.io');
 const { createShardedAdapter } = require('@socket.io/redis-adapter');
 
+// =======
+
+const createChannel = require('./actions/create-channel');
+const createConversation = require('./actions/create-conversation');
+const postMessagetoChannel = require('./actions/post-message-to-channel');
+const postMessageToConversation = require('./actions/post-message-to-conversation');
+const postMessageToUser = require('./actions/post-message-to-user');
+
 const pubClient = createClient({ 
   url: 'rediss://chat-websocket-messages-redis-adapter-rwzd07.serverless.euc1.cache.amazonaws.com:6379',
   tls: true
@@ -14,25 +22,40 @@ const subClient = pubClient.duplicate();
 pubClient.on('error', (err) => console.log('Redis Client Error', err));
 
 const io = new Server({
-  adapter: createShardedAdapter(pubClient, subClient, {
-    subscriptionMode: "dynamic"
+  // include adapter only for non-development env
+  ...(process.env.NODE_ENV !== 'development' && {
+    adapter: createShardedAdapter(pubClient, subClient, {
+      subscriptionMode: "dynamic"
+    }),
   }),
 
   cors: {
-    origin: '*'
+    origin: 'http://localhost:8080',
+    credentials: true
   }
 });
 
 (async () => {
-  await Promise.all([
-    pubClient.connect(),
-    subClient.connect()
-  ]);
+  // connect to redis only in non-development env
+  if(process.env.NODE_ENV !== 'development') {
+    await Promise.all([
+      pubClient.connect(),
+      subClient.connect()
+    ]);
+  }
 
   const rooms = [];
 
   io.on("connection", socket => {
     console.log('connected client', socket.id);
+
+    socket.on('create-channel', createChannel);
+    socket.on('create-conversation', createConversation);
+    socket.on('post-message-to-channel', postMessagetoChannel);
+    socket.on('post-message-to-conversation', postMessageToConversation);
+    socket.on('post-message-to-user', postMessageToUser);
+
+    
 
     socket.joinedRooms = new Set();
 
