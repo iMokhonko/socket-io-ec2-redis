@@ -5,5 +5,5 @@ module.exports = () => {
   const month = date.getMonth() + 1;
   const day = date.getDate();
 
-  return `${year}-${month}-4`;
+  return `${year}-${month}-${day}`;
 }
