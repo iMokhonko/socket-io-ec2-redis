@@ -1,15 +1,16 @@
 const { DynamoDBClient, TransactWriteItemsCommand } = require("@aws-sdk/client-dynamodb");
+const { marshall } = require("@aws-sdk/util-dynamodb");
+
 const dbClient = new DynamoDBClient({ region: 'eu-central-1' });
 const ksuid = require('ksuid');
 const generatePartitionPostfix = require('../helpers/generate-partition-postfix');
 
 const TABLE_NAME = "test-table";
 
-module.exports = async ({ to = 'serhii.mokhonko', from = 'ivan.mokhonko', text = '' } = {}, callback) => {
+module.exports = async (socket, { to, from, text = '' } = {}, callback) => {
   // always generate the same conversationId for those users
 	const conversationId = [to, from].sort().join(':');
   const messageId = (await ksuid.random()).string;
-
 
   const messageTime = Date.now();
 
@@ -20,20 +21,20 @@ module.exports = async ({ to = 'serhii.mokhonko', from = 'ivan.mokhonko', text =
         Update: {
           TableName: TABLE_NAME,
 
-          Key: {
-            PK: { S: `CONVERSATION#${conversationId}` },
-            SK: { S: `CONVERSATION#${conversationId}` },
-          },
+          Key: marshall({
+            PK: `CONVERSATION#${conversationId}`,
+            SK: `CONVERSATION#${conversationId}`,
+          }),
 
           ExpressionAttributeNames: {
             '#conversationType': 'conversationType',
             '#messagesCount': 'messagesCount'
           },
 
-          ExpressionAttributeValues: {
-            ':type': { S: 'USER' },
-            ':inc': { N: '1' },
-          },
+          ExpressionAttributeValues: marshall({
+            ':type': 'USER',
+            ':inc': 1,
+          }),
 
           UpdateExpression: 'SET #conversationType = :type ADD #messagesCount :inc',
         },
@@ -44,22 +45,29 @@ module.exports = async ({ to = 'serhii.mokhonko', from = 'ivan.mokhonko', text =
 				Update: {
 					TableName: TABLE_NAME,
 
-          Key: {
-            PK: { S: `USER_CHATS#${from}` },
-            SK: { S: `USER#${to}` }
-          },
+          Key: marshall({
+            PK: `USER_CHATS#${from}`,
+            SK: `USER#${to}`
+          }),
 
           ExpressionAttributeNames: {
             '#conversationId': 'conversationId',
-            '#conversationType': 'conversationType'
+            '#conversationType': 'conversationType',
+            '#lastMessageData': 'lastMessageData'
           },
 
-          ExpressionAttributeValues: {
-            ':conversationId': { S: conversationId },
-            ':type': { S: 'USER' },
-          },
+          ExpressionAttributeValues: marshall({
+            ':conversationId': conversationId,
+            ':type': 'USER',
+            ':lastMessageData': {
+              'from': from,
+              'messageText': text,
+              'messageTime': messageTime,
+              'messageId': messageId
+            }
+          }),
           
-          UpdateExpression: 'SET #conversationType = :type, #conversationId = :conversationId',
+          UpdateExpression: 'SET #conversationType = :type, #conversationId = :conversationId, #lastMessageData = :lastMessageData',
 				}
 			},
 
@@ -68,22 +76,29 @@ module.exports = async ({ to = 'serhii.mokhonko', from = 'ivan.mokhonko', text =
 				Update: {
 					TableName: TABLE_NAME,
 
-          Key: {
-            PK: { S: `USER_CHATS#${to}` },
-            SK: { S: `USER#${from}` }
-          },
+          Key: marshall({
+            PK: `USER_CHATS#${to}`,
+            SK:  `USER#${from}`
+          }),
 
           ExpressionAttributeNames: {
             '#conversationId': 'conversationId',
-            '#conversationType': 'conversationType'
+            '#conversationType': 'conversationType',
+            '#lastMessageData': 'lastMessageData'
           },
 
-          ExpressionAttributeValues: {
-            ':conversationId': { S: conversationId },
-            ':type': { S: 'USER' },
-          },
+          ExpressionAttributeValues: marshall({
+            ':conversationId': conversationId,
+            ':type': 'USER',
+            ':lastMessageData': {
+              'from': from,
+              'messageText': text,
+              'messageTime': messageTime,
+              'messageId': messageId
+            }
+          }),
           
-          UpdateExpression: 'SET #conversationType = :type, #conversationId = :conversationId',
+          UpdateExpression: 'SET #conversationType = :type, #conversationId = :conversationId, #lastMessageData = :lastMessageData',
 				}
 			},
 
@@ -92,13 +107,13 @@ module.exports = async ({ to = 'serhii.mokhonko', from = 'ivan.mokhonko', text =
 				Put: {
 					TableName: TABLE_NAME,
 			
-					Item: {
-						PK: { S: `CONVERSATION#${conversationId}#${generatePartitionPostfix()}` },
-						SK: { S: `MESSAGE#${messageId}` },
-						owner: { S: from },
-            text: { S: text },
-            time: { N: `${messageTime}` },
-					},
+					Item: marshall({
+						PK: `CONVERSATION#${conversationId}#${generatePartitionPostfix()}`,
+						SK: `MESSAGE#${messageId}`,
+						from,
+            text: text,
+            time: messageTime,
+					}),
 					
 					ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
 				}
@@ -108,14 +123,12 @@ module.exports = async ({ to = 'serhii.mokhonko', from = 'ivan.mokhonko', text =
       {
         Update: {
           TableName: TABLE_NAME,
-          Key: {
-            PK: { S: `CONVERSATION#${conversationId}#${generatePartitionPostfix()}` },
-            SK: { S: 'METADATA' }
-          },
+          Key: marshall({
+            PK: `CONVERSATION#${conversationId}#${generatePartitionPostfix()}`,
+            SK: 'METADATA'
+          }),
 
-          ExpressionAttributeValues: {
-            ':inc': { N: '1' },
-          },
+          ExpressionAttributeValues: marshall({ ':inc': 1 }),
 
           UpdateExpression: 'ADD messagesCount :inc',
         }
@@ -128,7 +141,23 @@ module.exports = async ({ to = 'serhii.mokhonko', from = 'ivan.mokhonko', text =
 	try {
 		await dbClient.send(command);
 
-		callback({ status: 'ok', conversationId, messageId });
+    const response = { 
+      conversationId, 
+      from, 
+      to, 
+      messageData: {
+        from,
+        messageText: text,
+        messageTime
+      }
+    };
+
+    socket.to(to).emit('incoming-message', response)
+
+		callback({ 
+      status: 'ok', 
+      ...response,
+    });
 	} catch (err) {
 		console.error(err);
 	}

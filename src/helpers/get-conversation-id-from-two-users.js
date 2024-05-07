@@ -1,0 +1,1 @@
+module.exports = (firstId, secondId) => [firstId, secondId].sort().join(':');
