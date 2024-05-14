@@ -1,6 +1,6 @@
 const { DynamoDBClient, TransactWriteItemsCommand } = require("@aws-sdk/client-dynamodb");
 const dbClient = new DynamoDBClient({ region: 'eu-central-1' });
-const generatePartitionPostfix = require('../helpers/generate-partition-postfix');
+const getBucketKey = require('../helpers/get-bucket-key');
 const ksuid = require('ksuid');
 
 const TABLE_NAME = "test-table";
@@ -35,7 +35,7 @@ module.exports = async ({ conversationId, text, owner = 'ivan.mokhonko' } = {}, 
         Update: {
           TableName: TABLE_NAME,
           Key: {
-            PK: { S: `CONVERSATION#${conversationId}#${generatePartitionPostfix()}` },
+            PK: { S: `CONVERSATION#${conversationId}#${getBucketKey()}` },
             SK: { S: 'METADATA' }
           },
           ExpressionAttributeValues: {
@@ -50,7 +50,7 @@ module.exports = async ({ conversationId, text, owner = 'ivan.mokhonko' } = {}, 
         Put: {
           TableName: TABLE_NAME,
           Item: {
-            PK: { S: `CONVERSATION#${conversationId}#${generatePartitionPostfix()}` },
+            PK: { S: `CONVERSATION#${conversationId}#${getBucketKey()}` },
             SK: { S: `MESSAGE#${messageId}` },
             owner: { S: owner },
             text: { S: text },

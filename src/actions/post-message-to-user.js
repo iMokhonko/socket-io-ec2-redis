@@ -3,7 +3,8 @@ const { marshall } = require("@aws-sdk/util-dynamodb");
 
 const dbClient = new DynamoDBClient({ region: 'eu-central-1' });
 const ksuid = require('ksuid');
-const generatePartitionPostfix = require('../helpers/generate-partition-postfix');
+const getBucketKey = require('../helpers/get-bucket-key');
+const getMidnightDate = require('../helpers/get-midnight-date');
 
 const TABLE_NAME = "test-table";
 
@@ -16,27 +17,27 @@ module.exports = async (socket, { to, from, text = '' } = {}, callback) => {
 
 	const params = {
     TransactItems: [
-      // сreate/update conversation object
+      // Create object that contains current bucket date and messages count for that bucket
       {
         Update: {
           TableName: TABLE_NAME,
 
           Key: marshall({
             PK: `CONVERSATION#${conversationId}`,
-            SK: `CONVERSATION#${conversationId}`,
+            SK: `PAGINATION_DATE#${getBucketKey()}`,
           }),
 
-          ExpressionAttributeNames: {
-            '#conversationType': 'conversationType',
-            '#messagesCount': 'messagesCount'
+          ExpressionAttributeNames: { 
+            '#messagesCount': 'messagesCount',
+            '#date': 'date'
           },
 
-          ExpressionAttributeValues: marshall({
-            ':type': 'USER',
+          ExpressionAttributeValues: marshall({ 
             ':inc': 1,
+            ':date': getMidnightDate()
           }),
 
-          UpdateExpression: 'SET #conversationType = :type ADD #messagesCount :inc',
+          UpdateExpression: 'ADD #messagesCount :inc SET #date = :date',
         },
       },
 
@@ -108,7 +109,7 @@ module.exports = async (socket, { to, from, text = '' } = {}, callback) => {
 					TableName: TABLE_NAME,
 			
 					Item: marshall({
-						PK: `CONVERSATION#${conversationId}#${generatePartitionPostfix()}`,
+						PK: `CONVERSATION#${conversationId}#${getBucketKey()}`,
 						SK: `MESSAGE#${messageId}`,
 						from,
             text: text,
@@ -118,21 +119,6 @@ module.exports = async (socket, { to, from, text = '' } = {}, callback) => {
 					ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
 				}
 			},
-
-      // create/update conversation messages by day metadata
-      {
-        Update: {
-          TableName: TABLE_NAME,
-          Key: marshall({
-            PK: `CONVERSATION#${conversationId}#${generatePartitionPostfix()}`,
-            SK: 'METADATA'
-          }),
-
-          ExpressionAttributeValues: marshall({ ':inc': 1 }),
-
-          UpdateExpression: 'ADD messagesCount :inc',
-        }
-      },
 		]
 	}
 
