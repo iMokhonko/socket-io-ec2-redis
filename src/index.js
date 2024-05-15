@@ -12,6 +12,7 @@ const postMessagetoChannel = require('./actions/post-message-to-channel');
 const postMessageToConversation = require('./actions/post-message-to-conversation');
 const postMessageToUser = require('./actions/post-message-to-user');
 const getConversationMessages = require('./user-actions/get-conversation-messages');
+const upsertUser = require('./user-actions/upsert-user');
 
 const getUserChats = require('./user-actions/getUserChats');
 
@@ -51,10 +52,22 @@ const io = new Server({
   io.on("connection", async socket => {
     console.log('connected client', socket.handshake.auth.userId, socket.id);
 
-    // disconnect event
-    socket.on("disconnect", reason => console.log('disconnected client', reason, socket.id, rooms));
-
     const { userId = null } = socket?.handshake?.auth ?? {};
+
+    // disconnect event
+    socket.on("disconnect", async reason => {
+      console.log('disconnected client', reason, socket.id, rooms)
+
+      // emit to all socket in this room that this user is offline
+      socket.broadcast.to(userId).emit('status', { userId, isOnline: false, lastSeen: Date.now() });
+
+      // set status isOnline false to this user in DB
+      await upsertUser(userId, { isOnline: false, lastSeen: Date.now() });
+    });
+
+    
+    // create or update user in db (mainly update isOnline to true)
+    await upsertUser(userId);
 
     socket.on('create-channel', createChannel);
     socket.on('create-conversation', createConversation);
@@ -64,13 +77,16 @@ const io = new Server({
     socket.on('get-conversation-messages', getConversationMessages);
 
     const userChats = await getUserChats(userId);
-
-    // join socket to his conversation rooms
-    // userChats.forEach(({ conversationId }) => socket.join(conversationId));
     
     // join this socket to his personal room
     // in this room all direct messages will be sent to this user
     socket.join(userId);
+
+    // emit to all socket in this room that this user is online
+    socket.broadcast.to(userId).emit('status', { userId, isOnline: true });
+
+    // join user to all rooms of users that he has conversation
+    userChats.forEach(({ to }) => socket.join(to));
 
     socket.emit('update-user-chats', userChats)
   });
