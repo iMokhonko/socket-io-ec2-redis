@@ -41,37 +41,6 @@ module.exports = async (socket, { to, from, text = '' } = {}, callback) => {
         },
       },
 
-      // add/update this conversation to user that sent message
-			{
-				Update: {
-					TableName: TABLE_NAME,
-
-          Key: marshall({
-            PK: `USER_CHATS#${from}`,
-            SK: `USER#${to}`
-          }),
-
-          ExpressionAttributeNames: {
-            '#conversationId': 'conversationId',
-            '#conversationType': 'conversationType',
-            '#lastMessageData': 'lastMessageData'
-          },
-
-          ExpressionAttributeValues: marshall({
-            ':conversationId': conversationId,
-            ':type': 'USER',
-            ':lastMessageData': {
-              'from': from,
-              'messageText': text,
-              'messageTime': messageTime,
-              'messageId': messageId
-            }
-          }),
-          
-          UpdateExpression: 'SET #conversationType = :type, #conversationId = :conversationId, #lastMessageData = :lastMessageData',
-				}
-			},
-
       // add/update this conversation to user that should recieve this message
       {
 				Update: {
@@ -121,6 +90,39 @@ module.exports = async (socket, { to, from, text = '' } = {}, callback) => {
 			},
 		]
 	}
+
+  if(to !== from) {
+    // add/update this conversation to user that sent message
+    params.TransactItems.push({
+      Update: {
+        TableName: TABLE_NAME,
+
+        Key: marshall({
+          PK: `USER_CHATS#${from}`,
+          SK: `USER#${to}`
+        }),
+
+        ExpressionAttributeNames: {
+          '#conversationId': 'conversationId',
+          '#conversationType': 'conversationType',
+          '#lastMessageData': 'lastMessageData'
+        },
+
+        ExpressionAttributeValues: marshall({
+          ':conversationId': conversationId,
+          ':type': 'USER',
+          ':lastMessageData': {
+            'from': from,
+            'messageText': text,
+            'messageTime': messageTime,
+            'messageId': messageId
+          }
+        }),
+        
+        UpdateExpression: 'SET #conversationType = :type, #conversationId = :conversationId, #lastMessageData = :lastMessageData',
+      }
+    });
+  }
 
 	const command = new TransactWriteItemsCommand(params);
 

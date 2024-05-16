@@ -13,6 +13,7 @@ const postMessageToConversation = require('./actions/post-message-to-conversatio
 const postMessageToUser = require('./actions/post-message-to-user');
 const getConversationMessages = require('./user-actions/get-conversation-messages');
 const upsertUser = require('./user-actions/upsert-user');
+const searchUsers = require('./user-actions/search-users');
 
 const getUserChats = require('./user-actions/getUserChats');
 
@@ -75,6 +76,7 @@ const io = new Server({
     socket.on('post-message-to-conversation', postMessageToConversation);
     socket.on('post-message-to-user', ({ to, text }, callback) => postMessageToUser(socket, { to, from: userId, text }, callback));
     socket.on('get-conversation-messages', getConversationMessages);
+    socket.on('search-users', (payload, callback) => searchUsers({ ...payload, currentUserId: userId }, callback));
 
     const userChats = await getUserChats(userId);
     

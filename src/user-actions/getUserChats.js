@@ -60,9 +60,7 @@ module.exports = async (userId) => {
     });
 
     const users = await getUsersStatuses(userChats.map(({ to }) => to));
-
-    console.log('users', users);
-
+    
     return userChats.map(userChat => {
       const userMeta = users.find(meta => meta.userId === userChat.to);
 
