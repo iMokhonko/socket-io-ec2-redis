@@ -6,7 +6,7 @@ const ksuid = require('ksuid');
 const getBucketKey = require('../helpers/get-bucket-key');
 const getMidnightDate = require('../helpers/get-midnight-date');
 
-const TABLE_NAME = "test-table";
+const TABLE_NAME = "chat-table";
 
 module.exports = async (socket, { to, from, text = '' } = {}, callback) => {
   // always generate the same conversationId for those users

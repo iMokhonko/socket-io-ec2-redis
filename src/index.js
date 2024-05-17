@@ -34,7 +34,7 @@ const io = new Server({
   }),
 
   cors: {
-    origin: 'http://localhost:8080',
+    origin: ['http://localhost:8080', 'https://chat.imokhonko.com'],
     credentials: true
   }
 });

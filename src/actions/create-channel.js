@@ -3,7 +3,7 @@ const dbClient = new DynamoDBClient({ region: 'eu-central-1' });
 
 const ksuid = require('ksuid');
 
-const TABLE_NAME = "test-table";
+const TABLE_NAME = "chat-table";
 
 module.exports = async ({ channelName, owner = 'ivan.mokhonko' } = {}, callback) => {
 	const channelId = (await ksuid.random()).string;

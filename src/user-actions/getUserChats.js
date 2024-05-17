@@ -2,7 +2,7 @@ const { DynamoDBClient, QueryCommand, BatchGetItemCommand } = require("@aws-sdk/
 const { unmarshall, marshall } = require("@aws-sdk/util-dynamodb");
 
 const dbClient = new DynamoDBClient({ region: 'eu-central-1' });
-const TABLE_NAME = "test-table";
+const TABLE_NAME = "chat-table";
 
 const getConversationIdFromTwoUsers = require('../helpers/get-conversation-id-from-two-users');
 

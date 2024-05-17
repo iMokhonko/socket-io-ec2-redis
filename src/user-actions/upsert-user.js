@@ -2,7 +2,7 @@ const { DynamoDBClient, PutItemCommand } = require("@aws-sdk/client-dynamodb");
 const { marshall } = require("@aws-sdk/util-dynamodb");
 
 const dbClient = new DynamoDBClient({ region: 'eu-central-1' });
-const TABLE_NAME = "test-table";
+const TABLE_NAME = "chat-table";
 
 
 module.exports = async (userId, payload = {}) => {

@@ -1,6 +1,6 @@
 # Create target group for ALB
 resource "aws_lb_target_group" "chat_lb_target_group" {
-  name                 = "chat-lb-tg"
+  name                 = "chat-ws-lb-tg"
   port                 = 80
   deregistration_delay = 5
   protocol             = "HTTP"
@@ -19,7 +19,7 @@ resource "aws_lb_target_group" "chat_lb_target_group" {
 
 # Create ALB security group
 resource "aws_security_group" "chat_alb_sg" {
-  name        = "chat-alb-sg"
+  name        = "chat-ws-alb-sg"
   description = "Allow TCP traffic to ALB"
   vpc_id      = aws_vpc.chat_backend_vpc.id
 
@@ -47,7 +47,7 @@ resource "aws_security_group" "chat_alb_sg" {
 
 # Create ALB
 resource "aws_lb" "chat_alb" {
-  name               = "chat-alb"
+  name               = "chat-ws-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.chat_alb_sg.id]

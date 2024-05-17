@@ -3,7 +3,7 @@ const { unmarshall, marshall } = require("@aws-sdk/util-dynamodb");
 const getBucketKey = require('../helpers/get-bucket-key');
 
 const dbClient = new DynamoDBClient({ region: 'eu-central-1' });
-const TABLE_NAME = "test-table";
+const TABLE_NAME = "chat-table";
 
 
 // Get previous messages bucket Key

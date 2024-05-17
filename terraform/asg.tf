@@ -71,8 +71,14 @@ resource "aws_iam_role_policy_attachment" "elasticache_full_access_role" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonElastiCacheFullAccess"
 }
 
+# Attach DynamoDB full access
+resource "aws_iam_role_policy_attachment" "dynamodb_full_access_role" {
+  role       = aws_iam_role.ec2_iam_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+}
+
 resource "aws_iam_instance_profile" "chat_ec2_instances_profile" {
-  name = "chat-ec2-instances-profile"
+  name = "chat-ws-ec2-instances-profile"
   role = aws_iam_role.ec2_iam_role.name
 }
 
@@ -91,7 +97,7 @@ resource "aws_launch_template" "chat_asg_launch_template" {
   vpc_security_group_ids = [aws_security_group.chat_asg_sg.id]
 
   iam_instance_profile {
-    name = "chat-ec2-instances-profile"
+    name = "chat-ws-ec2-instances-profile"
   }
 
   // should waint untill first image will be pushed to ecr repository
